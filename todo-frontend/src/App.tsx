@@ -140,7 +140,8 @@ function App() {
     const [reorderedItem] = items.splice(result.source.index, 1);
     items.splice(result.destination.index, 0, reorderedItem);
 
-    // Calculate the new order_index based on the destination in the filtered list
+    // Since order_index values are always contiguous (normalized after each delete),
+    // we can safely use the destination index as the new order_index
     const newOrderIndex = result.destination.index;
 
     // Optimistically update UI with the reordered filtered tasks

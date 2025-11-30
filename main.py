@@ -202,14 +202,22 @@ async def update_task(task_id: int, task_update: TaskUpdate):
 
 @app.delete("/api/tasks/{task_id}", status_code=204)
 async def delete_task(task_id: int):
-    """Delete a task"""
+    """Delete a task and recompact order indices"""
     with get_db() as conn:
         cursor = conn.execute("DELETE FROM tasks WHERE id = ?", (task_id,))
-        conn.commit()
-        
+
         if cursor.rowcount == 0:
             raise HTTPException(status_code=404, detail="Task not found")
-    
+
+        # Recompact order indices to be contiguous (0, 1, 2, 3...)
+        cursor = conn.execute("SELECT id FROM tasks ORDER BY order_index ASC")
+        task_ids = [row[0] for row in cursor.fetchall()]
+
+        for new_index, task_id in enumerate(task_ids):
+            conn.execute("UPDATE tasks SET order_index = ? WHERE id = ?", (new_index, task_id))
+
+        conn.commit()
+
     return None
 
 
