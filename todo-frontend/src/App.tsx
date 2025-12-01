@@ -107,7 +107,8 @@ function App() {
         console.error('Error deleting task:', response.status, response.statusText);
         return;
       }
-      setTasks(tasks.filter(task => task.id !== taskId));
+      // Fetch fresh data to get recompacted order indices
+      await fetchTasks();
     } catch (error) {
       console.error('Error deleting task:', error);
     }
