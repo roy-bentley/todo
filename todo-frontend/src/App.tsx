@@ -66,6 +66,10 @@ function App() {
           status: 'todo'
         })
       });
+      if (!response.ok) {
+        console.error('Error adding task:', response.status, response.statusText);
+        return;
+      }
       const newTask = await response.json();
       setTasks([...tasks, newTask]);
       setNewTaskTitle('');
@@ -82,6 +86,10 @@ function App() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: newStatus })
       });
+      if (!response.ok) {
+        console.error('Error updating task status:', response.status, response.statusText);
+        return;
+      }
       const updatedTask = await response.json();
       setTasks(tasks.map(task => task.id === taskId ? updatedTask : task));
     } catch (error) {
@@ -92,9 +100,13 @@ function App() {
   // Delete task
   const deleteTask = async (taskId: number) => {
     try {
-      await fetch(`${API_URL}/tasks/${taskId}`, {
+      const response = await fetch(`${API_URL}/tasks/${taskId}`, {
         method: 'DELETE'
       });
+      if (!response.ok) {
+        console.error('Error deleting task:', response.status, response.statusText);
+        return;
+      }
       setTasks(tasks.filter(task => task.id !== taskId));
     } catch (error) {
       console.error('Error deleting task:', error);
@@ -120,6 +132,11 @@ function App() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ title: editingTitle })
       });
+      if (!response.ok) {
+        console.error('Error updating task title:', response.status, response.statusText);
+        setEditingTaskId(null);
+        return;
+      }
       const updatedTask = await response.json();
       setTasks(tasks.map(task => task.id === taskId ? updatedTask : task));
       setEditingTaskId(null);
