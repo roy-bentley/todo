@@ -3,7 +3,13 @@ import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea
 import { Plus, GripVertical, Trash2, Clock, CheckCircle2, AlertCircle } from 'lucide-react';
 import './App.css';
 
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000/api';
+// Use relative URL for production (works with nginx proxy)
+// Falls back to localhost for local development
+const API_URL = process.env.REACT_APP_API_URL || (
+  window.location.hostname === 'localhost'
+    ? 'http://localhost:8000/api'
+    : '/api'
+);
 
 interface Task {
   id: number;
@@ -27,10 +33,16 @@ function App() {
   const fetchTasks = async () => {
     try {
       const response = await fetch(`${API_URL}/tasks`);
+      if (!response.ok) {
+        console.error('Error fetching tasks:', response.status, response.statusText);
+        setTasks([]);
+        return;
+      }
       const data = await response.json();
-      setTasks(data);
+      setTasks(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error('Error fetching tasks:', error);
+      setTasks([]);
     } finally {
       setLoading(false);
     }
