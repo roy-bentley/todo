@@ -90,11 +90,12 @@ async def create_task(task: TaskCreate):
     valid_statuses = ["todo", "in_progress", "done"]
     if task.status not in valid_statuses:
         raise HTTPException(status_code=400, detail="Invalid status")
-    
+
     with get_db() as conn:
-        cursor = conn.execute("SELECT MAX(order_index) FROM tasks")
-        max_index = cursor.fetchone()[0] or 0
-        new_order_index = max_index + 1
+        # Count existing tasks to get the next order_index
+        cursor = conn.execute("SELECT COUNT(*) FROM tasks")
+        count = cursor.fetchone()[0]
+        new_order_index = count  # This ensures contiguous indices (0, 1, 2, ...)
 
         cursor = conn.execute(
             "INSERT INTO tasks (title, status, order_index) VALUES (?, ?, ?)",
@@ -102,14 +103,14 @@ async def create_task(task: TaskCreate):
         )
         conn.commit()
         task_id = cursor.lastrowid
-        
+
         # Fetch the created task including order_index
         cursor = conn.execute(
             "SELECT id, title, status, created_at, order_index FROM tasks WHERE id = ?",
             (task_id,)
         )
         new_task = dict(cursor.fetchone())
-    
+
     return new_task
 
 @app.get("/api/tasks/{task_id}", response_model=Task)
