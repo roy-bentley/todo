@@ -359,11 +359,9 @@ function App() {
                           className={`task-item ${snapshot.isDragging ? 'dragging' : ''}`}
                           ref={provided.innerRef}
                           {...provided.draggableProps}
+                          {...provided.dragHandleProps}
                         >
-                          <div
-                            className="drag-handle"
-                            {...provided.dragHandleProps}
-                          >
+                          <div className="drag-handle">
                             <GripVertical size={20} />
                           </div>
 
@@ -376,6 +374,8 @@ function App() {
                                 onChange={(e) => setEditingTitle(e.target.value)}
                                 onBlur={() => updateTaskTitle(task.id)}
                                 onKeyDown={(e) => handleEditKeyPress(e, task.id)}
+                                onMouseDown={(e) => e.stopPropagation()}
+                                onTouchStart={(e) => e.stopPropagation()}
                                 autoFocus
                               />
                             ) : (
@@ -400,7 +400,11 @@ function App() {
                             </div>
                           </div>
 
-                          <div className="task-actions">
+                          <div
+                            className="task-actions"
+                            onMouseDown={(e) => e.stopPropagation()}
+                            onTouchStart={(e) => e.stopPropagation()}
+                          >
                             <select
                               className="status-select"
                               value={task.status}
