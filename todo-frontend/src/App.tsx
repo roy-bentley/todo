@@ -165,24 +165,19 @@ function App() {
     if (!result.destination) return;
     if (result.source.index === result.destination.index) return;
 
+    // Get the order_index from the task currently at the destination position
+    // This is the order_index we want to move to
+    const newOrderIndex = filteredTasks[result.destination.index].order_index;
+
+    // Optimistically reorder for immediate UI feedback
     const items = Array.from(filteredTasks);
     const [reorderedItem] = items.splice(result.source.index, 1);
     items.splice(result.destination.index, 0, reorderedItem);
 
-    // Since order_index values are always contiguous (normalized after each delete),
-    // we can safely use the destination index as the new order_index
-    const newOrderIndex = result.destination.index;
-
-    // Optimistically update UI with the reordered filtered tasks
-    const reorderedWithNewIndices = items.map((task, index) => ({
-      ...task,
-      order_index: index
-    }));
-
-    // Merge back into the full task list
+    // Update the local state optimistically
     const taskMap = new Map(tasks.map(t => [t.id, t]));
-    reorderedWithNewIndices.forEach(task => {
-      taskMap.set(task.id, task);
+    items.forEach((task, index) => {
+      taskMap.set(task.id, { ...task, order_index: index });
     });
 
     const newTasks = Array.from(taskMap.values()).sort((a, b) => a.order_index - b.order_index);
@@ -190,18 +185,24 @@ function App() {
 
     // Send to API
     try {
-      await fetch(`${API_URL}/tasks/${reorderedItem.id}`, {
+      const response = await fetch(`${API_URL}/tasks/${reorderedItem.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ order_index: newOrderIndex })
       });
+
+      if (!response.ok) {
+        console.error('Error reordering task:', response.status, response.statusText);
+        await fetchTasks();
+        return;
+      }
 
       // Fetch fresh data from server to ensure consistency
       await fetchTasks();
     } catch (error) {
       console.error('Error reordering task:', error);
       // Revert on error
-      fetchTasks();
+      await fetchTasks();
     }
   };
 
